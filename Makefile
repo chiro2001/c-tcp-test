@@ -1,4 +1,4 @@
-all: clean server client
+all: clean server client tar
 server:
 	gcc -o server tcp_echo_srv.c
 client:
@@ -9,5 +9,7 @@ run: all
 	./client 127.0.0.0 9999 3
 	sleep 0.5
 	killall server
+tar:
+	tar cvf src.tar tcp_echo_cli.c tcp_echo_srv.c
 clean:
-	-rm *.txt server client
+	-rm *.txt server client *.tar
