@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #define BACKLOG 1024
-//后面的输出到文件操作，建议使用这个宏，还可同时在屏幕上显示出来
+// 后面的输出到文件操作，建议使用这个宏，还可同时在屏幕上显示出来
 #define LOG(fp, format, ...)            \
   if (fp) {                             \
     printf(format, ##__VA_ARGS__);      \

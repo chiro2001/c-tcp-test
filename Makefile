@@ -6,7 +6,7 @@ client:
 run: all
 	./server 127.0.0.0 9999 &
 	sleep 0.5
-	./client 127.0.0.0 9999 10
+	./client 127.0.0.0 9999 3
 	sleep 0.5
 	killall server
 clean:

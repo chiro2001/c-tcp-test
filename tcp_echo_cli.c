@@ -11,23 +11,24 @@
 #include <unistd.h>
 
 #define MAX_CMD_STR 100
+// 后面的输出到文件操作，建议使用这个宏，还可同时在屏幕上显示出来
 #define LOG(fp, format, ...)            \
-  if (fp == NULL) {                     \
-    printf(format, ##__VA_ARGS__);      \
-  } else {                              \
+  if (fp) {                             \
     printf(format, ##__VA_ARGS__);      \
     fprintf(fp, format, ##__VA_ARGS__); \
     fflush(fp);                         \
+  } else {                              \
+    printf(format, ##__VA_ARGS__);      \
   }
 
-int sig_to_exit = 0;
 int sig_type = 0;
+int sig_to_exit = 0;
 FILE* fp_res = NULL;
 
 int echo_rqt(int sockfd, int pin) {
   pid_t pid = getpid();
-  int len_h = 0, len_n = 0;
   int pin_h = pin, pin_n = htonl(pin);
+  int len_h = 0, len_n = 0;
   char fn_td[10] = {0};
   char buf[MAX_CMD_STR + 1 + 8] = {0};
   int res = 0;
@@ -56,20 +57,21 @@ int echo_rqt(int sockfd, int pin) {
     memcpy(buf + 4, &len_n, 4);
 
     // 将读入的'\n'更换为'\0'；若仅有'\n'输入，则'\0'将被作为数据内容发出，数据长度为1
-    if (buf[len_h + 7] == '\n') buf[len_h + 7] = '\0';  // TODO
+    if (buf[len_h + 7] == '\n') buf[len_h + 7] = '\0';
 
-    write(sockfd, buf, len_h + 8);  // 用write发送echo_rqt数据
+    // 用write发送echo_rqt数据
+    write(sockfd, buf, len_h + 8);
 
-    memset(buf, 0,
-           sizeof(buf));  // 下面开始读取echo_rep返回来的数据，并存到res文件中
-
-    res = read(sockfd, &pin_n, 4);  // 读取PIN（网络字节序）到pin_n中
-    res = read(sockfd, &len_n,
-               4);  //读取服务器echo_rep数据长度（网络字节序）到len_n
+    memset(buf, 0, sizeof(buf));
+    // 下面开始读取echo_rep返回来的数据，并存到res文件中
+    // 读取PIN（网络字节序）到pin_n中
+    res = read(sockfd, &pin_n, 4);
+    // 读取服务器echo_rep数据长度（网络字节序）到len_n
+    res = read(sockfd, &len_n, 4);
     len_h = ntohl(len_n);  //转为主机字节序存放到len_h
     int already_read = 0, remain_read = len_h;
     do {
-      //使用read读取客户端数据，返回值赋给res。
+      // 使用read读取客户端数据，返回值赋给res。
       res = read(sockfd, buf + already_read, remain_read);
       already_read += res;
       if (already_read < len_h) {
@@ -77,18 +79,19 @@ int echo_rqt(int sockfd, int pin) {
       } else if (already_read == len_h) {
         break;
       } else {
-        free(buf);
+        // free(buf);
+        // do not need to free buf
         return pin_h;
       }
     } while (1);
 
-    LOG(fp_res, "[echo_rep](%d) %s\n", pid,
-        buf);  //读取服务器echo_rep数据，并输出到res文件中
+    // 读取服务器echo_rep数据，并输出到res文件中
+    LOG(fp_res, "[echo_rep](%d) %s\n", pid, buf);
   }
 
   return 0;
 }
-// ye wu luo ji end
+// 业务逻辑结束
 void sig_pipe(int signo) {
   sig_type = signo;
   printf("[cli](%d) SIGINT is coming!\n", getpid());
@@ -96,8 +99,7 @@ void sig_pipe(int signo) {
 }
 int main(int argc, char* argv[]) {
   if (argc != 4) {
-    printf("Usage:%s <IP> <PORT> <CONCURRENT AMOUNT>\n",
-           argv[0]);  // ge shi zhu yi
+    printf("Usage:%s <IP> <PORT> <CONCURRENT AMOUNT>\n", argv[0]);
     return 0;
   }
   struct sigaction sigactpipe, old_sigactpipe;
@@ -161,23 +163,22 @@ int main(int argc, char* argv[]) {
           char ip[20] = {0};  //用于IP地址转换
           LOG(fp_res, "[cli](%d) server[%s:%d] is connected!\n", pid2,
               inet_ntop(AF_INET, &srv_addr.sin_addr, ip, sizeof(ip)),
-              ntohs(
-                  srv_addr
-                      .sin_port));  // 将服务器端地址信息打印输出至对应的stu_cli_res_PIN.txt（见指导书）
-
-          if (!echo_rqt(connfd, pin))  //调用业务处理函数echo_rqt
-            break;
+              // 将服务器端地址信息打印输出至对应的stu_cli_res_PIN.txt（见指导书）
+              ntohs(srv_addr.sin_port));
+          //调用业务处理函数echo_rqt
+          if (!echo_rqt(connfd, pin)) break;
         } else
           break;
       } while (1);
 
-      close(connfd);  // 关闭连接描述符
+      // 关闭连接描述符
+      close(connfd);
       LOG(fp_res, "[cli](%d) connfd is closed!\n", pid2);
       LOG(fp_res, "[cli](%d) child process is going to exit!\n", pid2);
 
       fclose(fp_res);
-      printf("[cli](%d) stu_cli_res_%d.txt is closed!\n", pid2,
-             pin);  //关闭子进程res文件，同时打印提示信息到stdout
+      //关闭子进程res文件，同时打印提示信息到stdout
+      printf("[cli](%d) stu_cli_res_%d.txt is closed!\n", pid2, pin);
       exit(1);
     }
   }
@@ -198,31 +199,29 @@ int main(int argc, char* argv[]) {
 
   int pin = 0;
   do {
-    int res;
-    res =
-        connect(connfd, (struct sockaddr*)&srv_addr,
-                sizeof(srv_addr));  // 用connect连接到服务器端，返回值放在res里
+    // 用connect连接到服务器端，返回值放在res里
+    int res = connect(connfd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
     if (!res) {
       char ip[20] = {0};  //用于IP地址转换
       LOG(fp_res, "[cli](%d) server[%s:%d] is connected!\n", pid1,
           inet_ntop(AF_INET, &srv_addr.sin_addr, ip, sizeof(ip)),
-          ntohs(
-              srv_addr
-                  .sin_port));  // 将服务器端地址信息打印输出至对应的stu_cli_res_PIN.txt（见指导书）
+          // 将服务器端地址信息打印输出至对应的stu_cli_res_PIN.txt（见指导书）
+          ntohs(srv_addr.sin_port));
 
-      if (!echo_rqt(connfd, pin))  //调用业务处理函数echo_rqt
-        break;
+      // 调用业务处理函数echo_rqt
+      if (!echo_rqt(connfd, pin)) break;
     } else
       break;
   } while (1);
 
-  close(connfd);  // 关闭连接描述符，
+  // 关闭连接描述符，
+  close(connfd);
   LOG(fp_res, "[cli](%d) connfd is closed!\n", pid1);
   LOG(fp_res, "[cli](%d) parent process is going to exit!\n", pid1);
 
   fclose(fp_res);
-  printf("[cli](%d) stu_cli_res_%d.txt is closed!\n", pid1,
-         pin);  //关闭子进程res文件，同时打印提示信息到stdout
+  //关闭子进程res文件，同时打印提示信息到stdout
+  printf("[cli](%d) stu_cli_res_%d.txt is closed!\n", pid1, pin);
 
   return 0;
 }
