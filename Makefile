@@ -1,4 +1,4 @@
-all: server client
+all: clean server client
 server:
 	gcc -o server tcp_echo_srv.c
 client:
@@ -9,3 +9,5 @@ run: all
 	./client 127.0.0.0 9999 10
 	sleep 0.5
 	killall server
+clean:
+	-rm *.txt server client

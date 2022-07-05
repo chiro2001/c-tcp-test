@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define MAX_CMD_STR 100
-#define myprintf(fp, format, ...)       \
+#define LOG(fp, format, ...)            \
   if (fp == NULL) {                     \
     printf(format, ##__VA_ARGS__);      \
   } else {                              \
@@ -35,29 +35,28 @@ int echo_rqt(int sockfd, int pin) {
   sprintf(fn_td, "td%d.txt", pin);
   FILE* fp_td = fopen(fn_td, "r");
   if (!fp_td) {
-    myprintf(fp_res, "[cli](%d) Test data read error!\n", pin_h);
+    LOG(fp_res, "[cli](%d) Test data read error!\n", pin_h);
     return 0;
   }
 
-  while (fgets(
-      buf + 8, MAX_CMD_STR,
-      fp_td)) {  // 读取一行测试数据，从编址buf+8的字节开始写入，前8个字节分别留给PIN与数据长度（均为int）
-
+  // 读取一行测试数据，从编址buf+8的字节开始写入，前8个字节分别留给PIN与数据长度（均为int）
+  while (fgets(buf + 8, MAX_CMD_STR, fp_td)) {
     pin_h = pin;
     pin_n = htonl(pin);
     if (strncmp(buf + 8, "exit", 4) == 0) {
       break;
     }
 
-    memcpy(buf, &pin_n, 4);  // 将PIN（网络字节序）写入PDU缓存
-    len_h = strnlen(buf + 8, MAX_CMD_STR);  // 获取数据长度
+    // 将PIN（网络字节序）写入PDU缓存
+    memcpy(buf, &pin_n, 4);
+    // 获取数据长度
+    len_h = strnlen(buf + 8, MAX_CMD_STR);
     len_n = htonl(len_h);
-    memcpy(buf + 4, &len_n, 4);  // 将数据长度写入PDU缓存（网络字节序）
+    // 将数据长度写入PDU缓存（网络字节序）
+    memcpy(buf + 4, &len_n, 4);
 
-    if (buf[len_h + 7] == '\n')
-      buf[len_h + 7] =
-          '\0';  // TODO
-                 // 将读入的'\n'更换为'\0'；若仅有'\n'输入，则'\0'将被作为数据内容发出，数据长度为1
+    // 将读入的'\n'更换为'\0'；若仅有'\n'输入，则'\0'将被作为数据内容发出，数据长度为1
+    if (buf[len_h + 7] == '\n') buf[len_h + 7] = '\0';  // TODO
 
     write(sockfd, buf, len_h + 8);  // 用write发送echo_rqt数据
 
@@ -83,8 +82,8 @@ int echo_rqt(int sockfd, int pin) {
       }
     } while (1);
 
-    myprintf(fp_res, "[echo_rep](%d) %s\n", pid,
-             buf);  //读取服务器echo_rep数据，并输出到res文件中
+    LOG(fp_res, "[echo_rep](%d) %s\n", pid,
+        buf);  //读取服务器echo_rep数据，并输出到res文件中
   }
 
   return 0;
@@ -146,7 +145,7 @@ int main(int argc, char* argv[]) {
 
       printf("[cli](%d) stu_cli_res_%d.txt is created!\n", pid2,
              pin);  // 将子进程已创建的信息打印到stdout
-      myprintf(fp_res, "[cli](%d) child process %d is created!\n", pid2, pin);
+      LOG(fp_res, "[cli](%d) child process %d is created!\n", pid2, pin);
       connfd =
           socket(AF_INET, SOCK_STREAM, 0);  // 创建套接字connfd（加上出错控制）
       if (connfd == -1 && errno == EINTR && sig_type == SIGINT) {
@@ -160,8 +159,7 @@ int main(int argc, char* argv[]) {
             sizeof(srv_addr));  // 用connect连接到服务器端，返回值放在res里
         if (!res) {
           char ip[20] = {0};  //用于IP地址转换
-          myprintf(
-              fp_res, "[cli](%d) server[%s:%d] is connected!\n", pid2,
+          LOG(fp_res, "[cli](%d) server[%s:%d] is connected!\n", pid2,
               inet_ntop(AF_INET, &srv_addr.sin_addr, ip, sizeof(ip)),
               ntohs(
                   srv_addr
@@ -174,8 +172,8 @@ int main(int argc, char* argv[]) {
       } while (1);
 
       close(connfd);  // 关闭连接描述符
-      myprintf(fp_res, "[cli](%d) connfd is closed!\n", pid2);
-      myprintf(fp_res, "[cli](%d) child process is going to exit!\n", pid2);
+      LOG(fp_res, "[cli](%d) connfd is closed!\n", pid2);
+      LOG(fp_res, "[cli](%d) child process is going to exit!\n", pid2);
 
       fclose(fp_res);
       printf("[cli](%d) stu_cli_res_%d.txt is closed!\n", pid2,
@@ -206,8 +204,7 @@ int main(int argc, char* argv[]) {
                 sizeof(srv_addr));  // 用connect连接到服务器端，返回值放在res里
     if (!res) {
       char ip[20] = {0};  //用于IP地址转换
-      myprintf(
-          fp_res, "[cli](%d) server[%s:%d] is connected!\n", pid1,
+      LOG(fp_res, "[cli](%d) server[%s:%d] is connected!\n", pid1,
           inet_ntop(AF_INET, &srv_addr.sin_addr, ip, sizeof(ip)),
           ntohs(
               srv_addr
@@ -220,8 +217,8 @@ int main(int argc, char* argv[]) {
   } while (1);
 
   close(connfd);  // 关闭连接描述符，
-  myprintf(fp_res, "[cli](%d) connfd is closed!\n", pid1);
-  myprintf(fp_res, "[cli](%d) parent process is going to exit!\n", pid1);
+  LOG(fp_res, "[cli](%d) connfd is closed!\n", pid1);
+  LOG(fp_res, "[cli](%d) parent process is going to exit!\n", pid1);
 
   fclose(fp_res);
   printf("[cli](%d) stu_cli_res_%d.txt is closed!\n", pid1,
