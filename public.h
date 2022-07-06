@@ -2,15 +2,16 @@
 
 #include "macro.h"
 
-#define LOG_SELF MUXDEF(SELF, SELF, "srv")
+#define LOG_SELF MUXDEF(SELF_CLI, "cli", "srv")
+#define LOG_PREFIX "[%s](%d) "
 
-#define LOG_(fp, name, format, ...)                                   \
-  do {                                                                \
-    printf("[%s](%d) " format, name, (int)(getpid()), ##__VA_ARGS__); \
-    if (fp) {                                                         \
-      fprintf(fp, format, ##__VA_ARGS__);                             \
-      fflush(fp);                                                     \
-    }                                                                 \
+#define LOG_(fp, name, format, ...)                                          \
+  do {                                                                       \
+    printf(LOG_PREFIX format "\n", name, (int)(getpid()), ##__VA_ARGS__);         \
+    if (fp) {                                                                \
+      fprintf(fp, LOG_PREFIX format "\n", name, (int)(getpid()), ##__VA_ARGS__); \
+      fflush(fp);                                                            \
+    }                                                                        \
   } while (0);
 
 #define LOG(fp, format, ...) LOG_(fp, LOG_SELF, format, ##__VA_ARGS__)
