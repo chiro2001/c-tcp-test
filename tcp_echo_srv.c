@@ -158,7 +158,6 @@ int main(int argc, char **argv) {
   }
   LG("stu_srv_res_p.txt is opened!");
 
-  int concurrent = atoi(argv[3]);
   // 解析地址参数
   struct sockaddr_in addr_server = {.sin_family = AF_INET,
                                     .sin_addr.s_addr = inet_addr(argv[1]),
@@ -166,11 +165,14 @@ int main(int argc, char **argv) {
 
   int listenfd = socket(AF_INET, SOCK_STREAM, 0);
   bind(listenfd, (struct sockaddr *)(&addr_server), sizeof(addr_server));
+
+  LG("* listening...");
   listen(listenfd, BACKLOG);
 
   while (!sig_to_exit) {
     struct sockaddr_in addr_client;
     int addr_client_len = sizeof(addr_client);
+    LG("* accepting...");
     int connfd =
         accept(listenfd, (struct sockaddr *)(&addr_client), &addr_client_len);
     if (connfd == -1 && errno == EINTR) {
