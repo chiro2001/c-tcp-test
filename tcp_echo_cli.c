@@ -133,10 +133,12 @@ void setup_signal_handler(int signal_number, void (*function)(int), int flags) {
 #define MAX_CMD_STR 100
 
 int sig_type = 0;
+int sig_to_exit = 0;
 FILE *fp_res = NULL;
 
-void sig_pipe(int signo) {
+void sig_int(int signo) {
   sig_type = signo;
+  sig_to_exit = 1;
   LG("SIGINT is coming!");
 }
 
@@ -185,7 +187,16 @@ int echo_rqt(int sockfd, int pin) {
     len = ntohl(len_n);
     int read_bytes = 0;
     do {
-      read_bytes += read(sockfd, buf + read_bytes, len - read_bytes);
+      LG("** before read");
+      ssize_t res = read(sockfd, buf + read_bytes, len - read_bytes);
+      if (res < 0) {
+        return 0;
+      }
+      if (res == 0 && sig_to_exit) {
+        LG("** sig_to_exit");
+        return 0;
+      }
+      read_bytes += res;
       if (read_bytes == len) break;
       if (read_bytes > len) {
         LG("ERROR");
@@ -236,7 +247,8 @@ int main(int argc, char **argv) {
     LG("Usage:%s <IP> <PORT> <CONCURRENT AMOUNT>", argv[0]);
     return 0;
   }
-  setup_signal_handler(SIGPIPE, sig_pipe, SA_RESTART);
+  setup_signal_handler(SIGINT, sig_int, SA_RESTART);
+  setup_signal_handler(SIGPIPE, sig_int, SA_RESTART);
   setup_signal_handler(SIGCHLD, SIG_IGN, SA_RESTART);
 
   int concurrent = atoi(argv[3]);
