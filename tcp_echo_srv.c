@@ -125,7 +125,7 @@
 #define LG(format, ...) LOG(NULL, format, ##__VA_ARGS__)
 
 void setup_signal_handler(int signal_number, void (*function)(int), int flags) {
-  struct sigaction sig = {.sa_flags = flags, .__sigaction_handler = function};
+  struct sigaction sig = {.sa_flags = flags, .sa_handler = function};
   sigemptyset(&sig.sa_mask);
   sigaction(signal_number, &sig, NULL);
 }
