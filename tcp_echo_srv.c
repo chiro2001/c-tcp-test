@@ -230,7 +230,7 @@ int echo_req(int sockfd) {
   return pin;
 }
 
-void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
+void process_socket(int listenfd, int connfd) {
   LG("\t* process_socket");
   char filename[32];
   sprintf(filename, "stu_srv_res_%d.txt", getpid());
@@ -311,7 +311,7 @@ int main(int argc, char **argv) {
     LOG(fp_res, "client[%s:%d] is accepted!", ip,
         (int)ntohs(addr_client.sin_port));
     if (!fork())
-      process_socket(&addr_client, listenfd, connfd);
+      process_socket(listenfd, connfd);
     else
       close(connfd);
   }
