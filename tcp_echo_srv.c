@@ -34,42 +34,80 @@ uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
 }
 
 int echo_rqt(int sockfd) {
-  // uint32_t pin_n = htonl(pin);
-  // char fn_td[20];
-  // sprintf("fd%d.txt", pin);
-  // FILE *fp_td = fopen(fn_td, "r");
-  // if (!fp_td) {
-  //   LOG(fp_res, "Test data read error!");
-  //   return 0;
-  // }
-  // uint8_t buf[10 + MAX_CMD_STR];
-  // char buf_read[1 + MAX_CMD_STR];
-  // memset(buf, 0, sizeof(buf));
-  // while (fgets(buf_read, MAX_CMD_STR, fp_td)) {
-  //   if (buf_read[0] == '\n') buf_read[0] = '\0';
-  //   int len = strnlen(buf_read, MAX_CMD_STR);
-  //   int len_n = htonl(len ? len : 1);
-  //   uint8_t *p = buf;
-  //   p = write_bytes(p, &pin_n, 4);
-  //   p = write_bytes(p, &len_n, 4);
-  //   p = write_bytes(p, buf_read, len + 1);
-  //   // refill
-  //   memset(buf, 0, sizeof(buf));
-  //   read(sockfd, &pin_n, 4);
-  //   read(sockfd, &len_n, 4);
-  //   len = ntohl(len_n);
-  //   int read_bytes = 0;
-  //   do {
-  //     read_bytes += read(sockfd, buf + read_bytes, len - read_bytes);
-  //     if (read_bytes == len) break;
-  //     if (read_bytes > len) {
-  //       LG("ERROR");
-  //       return pin;
-  //     }
-  //   } while (1);
-  //   LOG_REP(fp_res, "%s", buf);
-  // }
-  // return 0;
+  uint32_t pin_n = -1;
+  uint32_t len_n = -1;
+  int pin = -1;
+  int len = -1;
+  int res = 0;
+  do {
+    do {
+      res = read(sockfd, &pin_n, 4);
+      if (res < 0) {
+        LOG(fp_res, "read pin_n return %d and errno is %d!", res, errno);
+        if (errno == EINTR) {
+          if (sig_type == SIGINT) return pin;
+          continue;
+        }
+        return pin;
+      }
+      if (!res) return pin;
+      pin = ntohl(pin_n);
+      break;
+    } while (1);
+    do {
+      res = read(sockfd, &len_n, 4);
+      if (res < 0) {
+        LOG(fp_res, "read len_n return %d and errno is %d!", res, errno);
+        if (errno == EINTR) {
+          if (sig_type == SIGINT) return len;
+          continue;
+        }
+        return len;
+      }
+      if (!res) return len;
+      len = ntohl(len_n);
+      break;
+    } while (1);
+  } while (1);
+  uint8_t *buf_read = malloc(len * sizeof(uint8_t));
+  uint8_t *buf = malloc(len * sizeof(uint8_t) + 9);
+#define QRT_DO_EXIT \
+  do {              \
+    free(buf);      \
+    free(buf_read); \
+    return pin;     \
+  } while (0)
+  int read_bytes = 0;
+  do {
+    res = read(sockfd, buf_read + read_bytes, len - read_bytes);
+    if (res < 0) {
+      LOG(fp_res, "read data return %d and errno is %d", res, errno);
+      if (errno == EINTR) {
+        if (sig_type == SIGINT) {
+          QRT_DO_EXIT;
+        }
+        continue;
+      }
+      QRT_DO_EXIT;
+    }
+    if (res == 0) {
+      QRT_DO_EXIT;
+    }
+    read_bytes += res;
+    if (read_bytes > len) {
+      QRT_DO_EXIT;
+    }
+    if (read_bytes == res) break;
+  } while (1);
+  LOG(fp_res, "%s", buf_read);
+  uint8_t *p = buf;
+  p = write_bytes(p, &pin_n, 4);
+  p = write_bytes(p, &len_n, 4);
+  p = write_bytes(p, buf_read, len);
+  write(sockfd, buf, len + 8);
+  free(buf);
+  free(buf_read);
+  return pin;
 }
 
 void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
