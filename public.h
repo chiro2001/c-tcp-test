@@ -16,7 +16,8 @@
 
 #define LOG(fp, format, ...) LOG_(fp, LOG_SELF, format, ##__VA_ARGS__)
 
-#define LOG_RQT(fp, format, ...) LOG_(fp, format, ##__VA_ARGS__)
+#define LOG_RQT(fp, format, ...) LOG_(fp, "echo_rqt", format, ##__VA_ARGS__)
+#define LOG_REP(fp, format, ...) LOG_(fp, "echo_rep", format, ##__VA_ARGS__)
 
 #define LG(format, ...) LOG(NULL, format, ##__VA_ARGS__)
 
