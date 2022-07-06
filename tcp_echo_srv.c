@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
   }
   setup_signal_handler(SIGPIPE, sig_pipe, SA_RESTART);
   setup_signal_handler(SIGCHLD, SIG_IGN, SA_RESTART);
-  setup_signal_handler(SIGPIPE, sig_int, 0);
+  setup_signal_handler(SIGINT, sig_int, 0);
 
   fp_res = fopen("stu_srv_res_p.txt", "wb");
   if (!fp_res) {
