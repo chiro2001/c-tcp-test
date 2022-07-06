@@ -31,7 +31,7 @@ uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
 int echo_rqt(int sockfd, int pin) {
   uint32_t pin_n = htonl(pin);
   char filename_td[20];
-  sprintf(filename_td, "fd%d.txt", pin);
+  sprintf(filename_td, "td%d.txt", pin);
   FILE *fp_td = fopen(filename_td, "r");
   if (!fp_td) {
     LOG(fp_res, "Test data read error!");

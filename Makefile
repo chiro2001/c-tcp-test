@@ -12,4 +12,4 @@ run: all
 tar:
 	tar cvf src.tar tcp_echo_cli.c tcp_echo_srv.c
 clean:
-	-rm *.txt server client
+	-rm stu*.txt server client

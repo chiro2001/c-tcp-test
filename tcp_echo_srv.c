@@ -126,7 +126,7 @@ void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
 
   int pin = echo_rqt(connfd);
   if (pin < 0) {
-    LOG(fp_res, "child exits, client PIN returned by echo_rqt() error!");
+    LOG(fp_res, "child exits, client PIN returned by echo_rqt() error! * pin = ", pin);
     exit(-1);
   }
   char filename_new[20];
