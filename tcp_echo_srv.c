@@ -148,17 +148,17 @@ uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
   return (uint8_t *)(dst) + size;
 }
 
-int echo_rqt(int sockfd) {
+int echo_req(int sockfd) {
   uint32_t pin_n = -1;
   uint32_t len_n = -1;
   int pin = -1;
   int len = -1;
   int res = 0;
-  LG("\t* echo_rqt");
+  LG("\t* echo_req");
   do {
     do {
       res = read(sockfd, &pin_n, 4);
-      LG("\t* server echo_rqt read pin: %d", res);
+      LG("\t* server echo_req read pin: %d", res);
       if (res < 0) {
         LOG(fp_res, "read pin_n return %d and errno is %d!", res, errno);
         if (errno == EINTR) {
@@ -245,7 +245,7 @@ void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
   close(listenfd);
   LOG(fp_res, "listenfd is closed!");
 
-  int pin = echo_rqt(connfd);
+  int pin = echo_req(connfd);
   if (pin < 0) {
     LOG(fp_res, "child exits, client PIN returned by echo_rqt() error!");
     LG("* pin = %d", pin);
@@ -261,6 +261,7 @@ void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
   close(connfd);
   LOG(fp_res, "connfd is closed!");
   LOG(fp_res, "child process is going to exit!", getpid());
+  fclose(fp_res);
   exit(1);
 }
 

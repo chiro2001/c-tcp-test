@@ -202,13 +202,14 @@ int process_socket(struct sockaddr_in *addr_server, int pin) {
   fp_res = fopen(filename, "ab");
   if (!fp_res) {
     LG("child exits, failed to open file \"stu_cli_res_%d.txt\"!", pin);
-    return -1;
+    exit(-1);
   }
   LG("stu_cli_res_%d.txt is created!", pin);
   LOG(fp_res, "child process %d is created!", pin);
   int connfd = socket(AF_INET, SOCK_STREAM, 0);
   if (connfd == -1 && errno == EINTR && sig_type == SIGINT) {
-    return 0;
+    // return 0;
+    exit(-1);
   }
   do {
     int res = connect(connfd, (struct sockaddr *)addr_server,
@@ -226,7 +227,7 @@ int process_socket(struct sockaddr_in *addr_server, int pin) {
   LOG(fp_res, "child process is going to exit!");
   fclose(fp_res);
   LG("stu_cli_res_%d.txt is closed!", pin);
-  return 1;
+  exit(1);
 }
 
 int main(int argc, char **argv) {
