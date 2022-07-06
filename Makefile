@@ -1,4 +1,4 @@
-all: clean server client
+all: clean server client tar
 server:
 	gcc tcp_echo_srv.c -o server
 client:
