@@ -285,6 +285,10 @@ int main(int argc, char **argv) {
                                     .sin_addr.s_addr = inet_addr(argv[1]),
                                     .sin_port = htons(atoi(argv[2]))};
 
+  char ip[20];
+  inet_ntop(AF_INET, &addr_server.sin_addr, ip, sizeof(ip));
+  LOG(fp_res, "server[%s:%d] is initializing!", ip, (int)ntohs(addr_server.sin_port));
+
   int listenfd = socket(AF_INET, SOCK_STREAM, 0);
   bind(listenfd, (struct sockaddr *)(&addr_server), sizeof(addr_server));
 
