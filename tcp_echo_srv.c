@@ -101,7 +101,9 @@ int echo_rqt(int sockfd) {
       }
       if (read_bytes == res) break;
     } while (1);
-    LOG(fp_res, "%s", buf_read);
+    buf_read[read_bytes] = '\0';
+    LG("\t* read_bytes = %d", read_bytes);
+    LOG_RQT(fp_res, "%s", buf_read);
     uint8_t *p = buf;
     p = write_bytes(p, &pin_n, 4);
     p = write_bytes(p, &len_n, 4);
