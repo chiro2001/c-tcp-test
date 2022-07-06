@@ -39,8 +39,10 @@ int echo_rqt(int sockfd) {
   int pin = -1;
   int len = -1;
   int res = 0;
+  LG("\t* echo_rqt");
   do {
     do {
+      LG("\t* server echo_rqt read pin");
       res = read(sockfd, &pin_n, 4);
       if (res < 0) {
         LOG(fp_res, "read pin_n return %d and errno is %d!", res, errno);
@@ -111,6 +113,7 @@ int echo_rqt(int sockfd) {
 }
 
 void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
+  LG("\t* process_socket");
   char filename[32];
   sprintf(filename, "stu_srv_res_%d.txt", getpid());
   fp_res = fopen(filename, "wb");
@@ -126,7 +129,8 @@ void process_socket(struct sockaddr_in *addr_client, int listenfd, int connfd) {
 
   int pin = echo_rqt(connfd);
   if (pin < 0) {
-    LOG(fp_res, "child exits, client PIN returned by echo_rqt() error! * pin = ", pin);
+    LOG(fp_res, "child exits, client PIN returned by echo_rqt() error!");
+    LG("* pin = %d", pin);
     exit(-1);
   }
   char filename_new[20];

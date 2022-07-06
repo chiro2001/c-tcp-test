@@ -29,6 +29,7 @@ uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
 }
 
 int echo_rqt(int sockfd, int pin) {
+  LG("* echo_rqt");
   uint32_t pin_n = htonl(pin);
   char filename_td[20];
   sprintf(filename_td, "td%d.txt", pin);
@@ -36,18 +37,26 @@ int echo_rqt(int sockfd, int pin) {
   if (!fp_td) {
     LOG(fp_res, "Test data read error!");
     return 0;
-  }
+  } else
+    LG("* test data opened done.");
   uint8_t buf[10 + MAX_CMD_STR];
   char buf_read[1 + MAX_CMD_STR];
   memset(buf, 0, sizeof(buf));
   while (fgets(buf_read, MAX_CMD_STR, fp_td)) {
     if (buf_read[0] == '\n') buf_read[0] = '\0';
+    LG("* read test data: %s", buf_read);
+    if (strncmp(buf_read, "exit", 4) == 0) {
+      LG("* client exit caused by data: %s", buf_read);
+      break;
+    }
     int len = strnlen(buf_read, MAX_CMD_STR);
     int len_n = htonl(len ? len : 1);
     uint8_t *p = buf;
     p = write_bytes(p, &pin_n, 4);
     p = write_bytes(p, &len_n, 4);
     p = write_bytes(p, buf_read, len + 1);
+    LG("* clien writing: %s", buf_read);
+    write(sockfd, buf, len + 8);
     // refill
     memset(buf, 0, sizeof(buf));
     read(sockfd, &pin_n, 4);
