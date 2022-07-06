@@ -42,8 +42,8 @@ int echo_rqt(int sockfd) {
   LG("\t* echo_rqt");
   do {
     do {
-      LG("\t* server echo_rqt read pin");
       res = read(sockfd, &pin_n, 4);
+      LG("\t* server echo_rqt read pin: %d", res);
       if (res < 0) {
         LOG(fp_res, "read pin_n return %d and errno is %d!", res, errno);
         if (errno == EINTR) {
@@ -56,6 +56,7 @@ int echo_rqt(int sockfd) {
       pin = ntohl(pin_n);
       break;
     } while (1);
+    LG("* got pin: %d", pin);
     do {
       res = read(sockfd, &len_n, 4);
       if (res < 0) {
@@ -70,45 +71,45 @@ int echo_rqt(int sockfd) {
       len = ntohl(len_n);
       break;
     } while (1);
-  } while (1);
-  uint8_t *buf_read = malloc(len * sizeof(uint8_t));
-  uint8_t *buf = malloc(len * sizeof(uint8_t) + 9);
+    uint8_t *buf_read = malloc(len * sizeof(uint8_t));
+    uint8_t *buf = malloc(len * sizeof(uint8_t) + 9);
 #define QRT_DO_EXIT \
   do {              \
     free(buf);      \
     free(buf_read); \
     return pin;     \
   } while (0)
-  int read_bytes = 0;
-  do {
-    res = read(sockfd, buf_read + read_bytes, len - read_bytes);
-    if (res < 0) {
-      LOG(fp_res, "read data return %d and errno is %d", res, errno);
-      if (errno == EINTR) {
-        if (sig_type == SIGINT) {
-          QRT_DO_EXIT;
+    int read_bytes = 0;
+    do {
+      res = read(sockfd, buf_read + read_bytes, len - read_bytes);
+      if (res < 0) {
+        LOG(fp_res, "read data return %d and errno is %d", res, errno);
+        if (errno == EINTR) {
+          if (sig_type == SIGINT) {
+            QRT_DO_EXIT;
+          }
+          continue;
         }
-        continue;
+        QRT_DO_EXIT;
       }
-      QRT_DO_EXIT;
-    }
-    if (res == 0) {
-      QRT_DO_EXIT;
-    }
-    read_bytes += res;
-    if (read_bytes > len) {
-      QRT_DO_EXIT;
-    }
-    if (read_bytes == res) break;
+      if (res == 0) {
+        QRT_DO_EXIT;
+      }
+      read_bytes += res;
+      if (read_bytes > len) {
+        QRT_DO_EXIT;
+      }
+      if (read_bytes == res) break;
+    } while (1);
+    LOG(fp_res, "%s", buf_read);
+    uint8_t *p = buf;
+    p = write_bytes(p, &pin_n, 4);
+    p = write_bytes(p, &len_n, 4);
+    p = write_bytes(p, buf_read, len);
+    write(sockfd, buf, len + 8);
+    free(buf);
+    free(buf_read);
   } while (1);
-  LOG(fp_res, "%s", buf_read);
-  uint8_t *p = buf;
-  p = write_bytes(p, &pin_n, 4);
-  p = write_bytes(p, &len_n, 4);
-  p = write_bytes(p, buf_read, len);
-  write(sockfd, buf, len + 8);
-  free(buf);
-  free(buf_read);
   return pin;
 }
 
