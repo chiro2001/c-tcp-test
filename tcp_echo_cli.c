@@ -16,13 +16,11 @@
 #define MAX_CMD_STR 100
 
 int sig_type = 0;
-int sig_to_exit = 0;
 FILE *fp_res = NULL;
 
 void sig_pipe(int signo) {
   sig_type = signo;
-  printf("[cli](%d) SIGINT is coming!\n", getpid());
-  sig_to_exit = 1;
+  printf("SIGINT is coming!");
 }
 
 uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
@@ -32,9 +30,9 @@ uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
 
 int echo_rqt(int sockfd, int pin) {
   uint32_t pin_n = htonl(pin);
-  char fn_td[20];
-  sprintf("fd%d.txt", pin);
-  FILE *fp_td = fopen(fn_td, "r");
+  char filename_td[20];
+  sprintf(filename_td, "fd%d.txt", pin);
+  FILE *fp_td = fopen(filename_td, "r");
   if (!fp_td) {
     LOG(fp_res, "Test data read error!");
     return 0;
@@ -107,16 +105,14 @@ int main(int argc, char **argv) {
     LG("Usage:%s <IP> <PORT> <CONCURRENT AMOUNT>", argv[0]);
     return 0;
   }
-  setup_signal_handler(SIGPIPE, sig_pipe);
-  setup_signal_handler(SIGCHLD, SIG_IGN);
+  setup_signal_handler(SIGPIPE, sig_pipe, SA_RESTART);
+  setup_signal_handler(SIGCHLD, SIG_IGN, SA_RESTART);
 
   int concurrent = atoi(argv[3]);
   // 解析地址参数
   struct sockaddr_in addr_server = {.sin_family = AF_INET,
                                     .sin_port = htons(atoi(argv[2]))};
   inet_pton(AF_INET, argv[1], &addr_server.sin_addr);
-
-  pid_t pid_parent = getpid();
 
   for (int pin = 1; pin < concurrent; pin++)
     if (!fork()) {
