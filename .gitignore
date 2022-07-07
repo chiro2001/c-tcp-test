@@ -53,4 +53,5 @@ dkms.conf
 
 /server
 /client
-/*.txt
+/stu*.txt
+/.vscode/
