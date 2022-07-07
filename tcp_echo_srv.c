@@ -143,7 +143,7 @@ void handle_signal(int signo, const char *type) {
 void sig_int(int signo) { handle_signal(signo, "SIGINT"); }
 void sig_pipe(int signo) { handle_signal(signo, "SIGPIPE"); }
 
-uint8_t *write_bytes(void *dst, void *src, uint32_t size) {
+uint8_t *writeto(void *dst, void *src, uint32_t size) {
   memcpy(dst, src, size);
   return (uint8_t *)(dst) + size;
 }
@@ -220,9 +220,9 @@ int echo_req(int sockfd) {
     LG("\t* read_bytes = %d", read_bytes);
     LOG_RQT(fp_res, "%s", buf_read);
     uint8_t *p = buf;
-    p = write_bytes(p, &pin_n, 4);
-    p = write_bytes(p, &len_n, 4);
-    p = write_bytes(p, buf_read, len);
+    p = writeto(p, &pin_n, 4);
+    p = writeto(p, &len_n, 4);
+    p = writeto(p, buf_read, len);
     write(sockfd, buf, len + 8);
     free(buf);
     free(buf_read);
