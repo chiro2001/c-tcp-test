@@ -80,7 +80,6 @@ int echo_rqt(int sockfd, int pin) {
     len -= (buf_read[len - 1] == '\n');
     buf_read[len - 1] = (buf_read[len - 1] == '\n' ? '\0' : buf_read[len - 1]);
     uint32_t len_n = htonl(len ? len : 1);
-    uint8_t *p = buf;
     uint32_t pin_n = htonl(pin);
     writeto(writeto(writeto(buf, (uint8_t *)&pin_n, 4), (uint8_t *)&len_n, 4),
             buf_read, len + 1);
